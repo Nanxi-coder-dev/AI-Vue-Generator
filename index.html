@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 前端代码生成 Demo</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f7fa;
+        padding: 30px;
+        color: #333;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        margin-top: 0;
+        color: #2c3e50;
+        text-align: center;
+      }
+      textarea {
+        width: 100%;
+        height: 100px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 16px;
+        resize: vertical;
+        box-sizing: border-box;
+        margin-bottom: 15px;
+      }
+      button {
+        background-color: #409eff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        width: 100%;
+        transition: background 0.3s;
+      }
+      button:hover {
+        background-color: #66b1ff;
+      }
+      button:disabled {
+        background-color: #a0cfff;
+        cursor: not-allowed;
+      }
+      h3 {
+        margin-top: 30px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+      }
+      pre {
+        background: #282c34;
+        color: #abb2bf;
+        padding: 20px;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        min-height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>AI 前端代码生成 Demo</h2>
+
+      <div>
+        <textarea
+          id="prompt"
+          placeholder="请描述你的前端组件需求，例如：生成一个带搜索功能的表格..."
+        ></textarea>
+        <button id="generateBtn" onclick="generateCode()">一键生成代码</button>
+      </div>
+
+      <h3>生成的 Vue 代码：</h3>
+      <pre id="result">等待生成...</pre>
+    </div>
+
+    <script>
+      async function generateCode() {
+        const prompt = document.getElementById("prompt").value;
+        const resultEl = document.getElementById("result");
+        const btn = document.getElementById("generateBtn");
+
+        if (!prompt.trim()) {
+          alert("请先输入需求描述！");
+          return;
+        }
+
+        // 改变按钮状态，提示正在生成
+        btn.disabled = true;
+        btn.innerText = "正在生成中，请稍候...";
+        resultEl.textContent = "正在请求大模型，大概需要几秒钟...";
+
+        try {
+          // 请求我们本地启动的 Node.js 后端
+          const response = await fetch("http://localhost:3000/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: prompt }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            resultEl.textContent = data.code;
+          } else {
+            resultEl.textContent =
+              "生成失败：\n" + (data.details || data.error);
+          }
+        } catch (error) {
+          resultEl.textContent =
+            "网络请求失败，请检查你的 Node.js 后端是否已经启动，以及是否有跨域报错。\n错误信息：" +
+            error.message;
+        } finally {
+          // 恢复按钮状态
+          btn.disabled = false;
+          btn.innerText = "一键生成代码";
+        }
+      }
+    </script>
+  </body>
+</html>
