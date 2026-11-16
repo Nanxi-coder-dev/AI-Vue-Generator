@@ -1,68 +1,29 @@
-const express = require("express");
-const axios = require("axios");
-const cors = require("cors");
-require("dotenv").config();
+/**
+ * Express 启动入口：只负责加载环境变量、挂载中间件、引入路由、监听端口。
+ * 具体业务逻辑分别放在 routes/ 与 services/ 中。
+ */
 
-const app = express();
-// 允许跨域，这样你的前端 HTML 才能请求这个接口
-app.use(cors());
-// 解析前端传来的 JSON 数据
-app.use(express.json());
+require('dotenv').config()
 
-app.post("/api/generate", async (req, res) => {
-  const { prompt } = req.body;
+const express = require('express')
+const cors = require('cors')
+const generateRouter = require('./routes/generate')
 
-  if (!prompt) {
-    return res.status(400).json({ error: "请输入需求" });
-  }
+const app = express()
+const PORT = process.env.PORT || 3000
 
-  // 系统的约束提示词
-  const systemPrompt = `你是一个专业的前端开发专家。请生成一个 Vue3 的组件代码，必须包含 <template> 和 <script setup>。需求如下：${prompt}`;
+// 全局中间件
+app.use(cors())          // 允许跨域（供 Vite 前端调用）
+app.use(express.json())  // 解析 JSON 请求体
 
-  try {
-    // 调用通义千问 API
-    const response = await axios.post(
-      "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
-      {
-        model: "deepseek-v4-pro", // 已修改为纯文本模型 qwen-turbo
-        input: {
-          messages: [
-            { role: "system", content: "你是一个专业的前端开发专家。" },
-            { role: "user", content: systemPrompt },
-          ],
-        },
-        parameters: {
-          result_format: "message", // 确保返回格式为标准的 message 格式
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.QWEN_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      },
-    );
+// 路由挂载：所有 /api 开头的请求交给 generateRouter 处理
+app.use('/api', generateRouter)
 
-    // 提取大模型返回的代码 (注意这里的层级是 output.choices)
-    const generatedCode = response.data.output.choices[0].message.content;
+// 健康检查接口（用于快速确认服务是否存活）
+app.get('/health', (req, res) => res.json({ status: 'ok' }))
 
-    // 返回给前端
-    res.json({ code: generatedCode });
-  } catch (error) {
-    console.error(
-      "API 调用失败:",
-      error.response ? error.response.data : error.message,
-    );
-    res.status(500).json({
-      error: "调用大模型失败",
-      details: error.response ? error.response.data : error.message,
-    });
-  }
-});
-
-const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`=================================`);
-  console.log(`🚀 Demo 后端已启动: http://localhost:${PORT}`);
-  console.log(`=================================`);
-});
+  console.log('=================================')
+  console.log(`🚀 后端服务已启动: http://localhost:${PORT}`)
+  console.log('=================================')
+})
