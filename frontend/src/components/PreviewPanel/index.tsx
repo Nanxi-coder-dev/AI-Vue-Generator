@@ -5,7 +5,11 @@ export default function PreviewPanel() {
   const currentCode = useAppStore((s) => s.currentCode)
 
   if (!currentCode) {
-    return <Empty description="暂无代码，先在左侧描述需求生成组件" />
+    return (
+      <div className="preview-empty">
+        <Empty description="暂无代码，先在左侧描述需求生成组件" />
+      </div>
+    )
   }
 
   return (
